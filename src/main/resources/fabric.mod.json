@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "debugoverlays",
+  "version": "${version}",
+  "name": "Debugoverlays",
+  "description": "A mod which adds some debug overlays to the game",
+  "authors": [
+    "GiantLuigi4"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/debugoverlays/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "tfc.debugoverlays.client.DebugOverlaysClient"
+    ],
+    "main": [
+      "tfc.debugoverlays.DebugOverlays"
+    ]
+  },
+  "mixins": [
+    "debugoverlays.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.12.3",
+    "fabric": "*",
+    "minecraft": "1.17.1"
+  }
+}
