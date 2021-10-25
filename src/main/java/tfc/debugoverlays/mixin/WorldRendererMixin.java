@@ -11,7 +11,10 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.core.Registry;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,11 +23,16 @@ import tfc.debugoverlays.client.renderers.AIDebugRenderer;
 
 @Mixin(LevelRenderer.class)
 public class WorldRendererMixin {
+	@Shadow @Final private Minecraft minecraft;
 	@Unique
 	AIDebugRenderer AIRenderer = new AIDebugRenderer();
 	
 	@Inject(at = @At("TAIL"), method = "renderLevel")
 	public void postRender(PoseStack poseStack, float f, long l, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, CallbackInfo ci) {
+		if (minecraft.player == null) return;
+		// apparently main == off and off == main..?
+		if (Registry.ITEM.getKey(minecraft.player.getMainHandItem().getItem()).toString().equals("debugoverlays:ai_tool")) return;
+
 //		Matrix4f srcMat = RenderSystem.getModelViewMatrix();
 //
 //		Matrix4f mdlMat = srcMat.copy();

@@ -2,6 +2,7 @@ package tfc.debugoverlays.mixin;
 
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.Registry;
 import net.minecraft.network.protocol.game.DebugPackets;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,19 +21,17 @@ public class DebugPacketsMixin {
 	private static void preSendPathingPacket(Level level, Mob mob, Path path, float f, CallbackInfo ci) {
 		try {
 			level.players().forEach(player -> {
-//				if (
-//						player.getMainHandItem().getItem().equals() ||
-//								player.getHeldItem(Hand.OFF_HAND).getItem().equals(ItemRegistry.DEBUG_TOOL_ALL.get())
-//				) {
-				ServerPlayNetworking.send(
-						(ServerPlayer) player,
-						new ResourceLocation("debugoverlays:networking"),
-						PacketHandler.writePath(PacketByteBufs.create(), path, mob, f)
-				);
+				// apparently main == main and off == off..?
+				if (Registry.ITEM.getKey(player.getOffhandItem().getItem()).toString().equals("debugoverlays:ai_tool")) {
+					ServerPlayNetworking.send(
+							(ServerPlayer) player,
+							new ResourceLocation("debugoverlays:networking"),
+							PacketHandler.writePath(PacketByteBufs.create(), path, mob, f)
+					);
 //					AssortedUtils.NETWORK_INSTANCE.send(
 //							PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) player), new PathPacket(path, entity, distance)
 //					);
-//				}
+				}
 			});
 		} catch (Throwable ignored) {
 		}
