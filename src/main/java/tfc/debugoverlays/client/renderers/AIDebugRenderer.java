@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
@@ -25,13 +26,15 @@ public class AIDebugRenderer {
 			Node point = path.getNode(i);
 			Color c;
 			if (point.type.equals(BlockPathTypes.BLOCKED)) {
-				c = new Color(255, 0, 0);
+				c = new Color(128, 128, 128);
 			} else {
-				if (i < path.getNodeCount()) {
-					c = new Color(0, 255, 0);
-				} else if (i == path.getNextNodeIndex()) {
-					c = new Color(0, 255, 255);
-				} else if (
+//				if (i < path.getNodeCount()) {
+//					c = new Color(0, 255, 0);
+//				} else
+				if (i == path.getNextNodeIndex() - 1) {
+					c = new Color(255, 0, 255);
+				} else
+				if (
 						point.type.equals(BlockPathTypes.DANGER_FIRE) ||
 								point.type.equals(BlockPathTypes.DANGER_OTHER) ||
 								point.type.equals(BlockPathTypes.DAMAGE_CACTUS) ||
@@ -45,7 +48,7 @@ public class AIDebugRenderer {
 				) {
 					c = new Color(0, 128, 255);
 				} else {
-					c = new Color(0, 0, 255);
+					c = new Color(0, 255, 0);
 				}
 			}
 //			double dist = Minecraft.getInstance().player.distanceToSqr(point.x, point.y, point.z);
@@ -61,86 +64,70 @@ public class AIDebugRenderer {
 					.endVertex();
 		}
 		
+		RenderSystem.enableDepthTest();
+		RenderSystem.setShaderColor(1, 1, 1, 1);
+		RenderSystem.disableTexture();
+		RenderSystem.setShader(GameRenderer::getPositionColorShader);
 		tessellator.end();
 	}
-
-//	@Override
-//	public boolean shouldRender() {
-//		return ItemRegistry.isCorrect(
-//				Minecraft.getInstance().player.getHeldItem(Hand.OFF_HAND),
-//				ItemRegistry.DEBUG_TOOL_AI
-//		);
-//	}
 	
-	//	@Override
 	public void render(PoseStack stack, double playerX, double playerY, double playerZ) {
 		stack.translate(-playerX, -playerY, -playerZ);
 		
 		Map<Integer, Path> pathMap = Minecraft.getInstance().debugRenderer.pathfindingRenderer.pathMap;
+		if (Minecraft.getInstance().levelRenderer.getTranslucentTarget() != null)
+			Minecraft.getInstance().levelRenderer.getTranslucentTarget().bindWrite(true);
 		try {
 			pathMap.forEach((id, path) -> {
-				drawLine(stack, path, 0, 0, 0);
-				renderLoop(stack, id, path);
+				Entity e = Minecraft.getInstance().level.getEntity(id);
+				if (e != null) {
+					drawLine(stack, path, 0, 0, 0);
+					renderLoop(stack, id, path, e);
+				}
 			});
 		} catch (Throwable ignored) {
 		}
+		if (Minecraft.getInstance().levelRenderer.getTranslucentTarget() != null)
+			Minecraft.getInstance().levelRenderer.getTranslucentTarget().unbindWrite();
 	}
 	
-	void renderLoop(PoseStack stack, int id, Path path) {
-		Entity e = Minecraft.getInstance().level.getEntity(id);
-		if (e != null) {
-			for (int i = 0; i < path.getNodeCount(); i++) {
-				Vec3 pos = path.getEntityPosAtNode(e, i);
-				Node point = path.getNode(i);
-				
-				float hue = (float) i / (float) path.getNodeCount() * 0.33F;
-				int color = i == 0 ? 0 : Mth.hsvToRgb(hue, 0.9F, 0.9F);
-				int red = color >> 16 & 255;
-				int blue = color >> 8 & 255;
-				int green = color & 255;
-				RenderSystem.enableDepthTest();
-				RenderSystem.disableTexture();
-				RenderSystem.setShaderColor(1, 1, 1, 1);
-				RenderSystem.setShader(GameRenderer::getPositionColorShader);
-				drawBox(stack, pos.add(-0.1, 0.6, -0.1), 0.2, 0.2, 0.2, new Color(red, green, blue));
-				
-				{
-					stack.pushPose();
-					stack.translate(pos.x, pos.y + 1, pos.z);
-					int width = Minecraft.getInstance().font.width(i + "");
-					stack.scale(0.02f, 0.02F, 0.02F);
-					stack.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().camera.rotation());
-					stack.translate(width / 2f, 0, 0);
-					stack.scale(-1, -1, 1);
-					RenderSystem.disableCull();
-					Minecraft.getInstance().font.draw(stack, i + "", 0, 0, new Color(255, 255, 255).getRGB());
-					stack.popPose();
-				}
-				{
-					stack.pushPose();
-					stack.translate(pos.x, pos.y + 1.25, pos.z);
-					int width = Minecraft.getInstance().font.width(point.type.name());
-					stack.scale(0.02f, 0.02F, 0.02F);
-					stack.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().camera.rotation());
-					stack.translate(width / 2f, 0, 0);
-					stack.scale(-1, -1, 1);
-					RenderSystem.disableCull();
-					Minecraft.getInstance().font.draw(stack, point.type.name(), 0, 0, new Color(255, 255, 255).getRGB());
-					stack.popPose();
-				}
-				{
-					stack.pushPose();
-					stack.translate(pos.x, pos.y + 0.5, pos.z);
-					int width = Minecraft.getInstance().font.width(point.costMalus + "");
-					stack.scale(0.02f, 0.02F, 0.02F);
-					stack.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().camera.rotation());
-					stack.translate(width / 2f, 0, 0);
-					stack.scale(-1, -1, 1);
-					RenderSystem.disableCull();
-					Minecraft.getInstance().font.draw(stack, point.costMalus + "", 0, 0, new Color(255, 255, 255).getRGB());
-					stack.popPose();
-				}
-			}
+	void renderLoop(PoseStack stack, int id, Path path, Entity e) {
+		for (int i = 0; i < path.getNodeCount(); i++) {
+//			Vec3 pos = path.getEntityPosAtNode(e, i).subtract(e.getBbWidth() / 2, 0, e.getBbWidth() / 2).add(0.25, 0, 0.25);
+			BlockPos blockPos = path.getNodePos(i);
+			Vec3 pos = new Vec3(blockPos.getX(), blockPos.getY(), blockPos.getZ()).add(0.5, 0, 0.5);
+			Node point = path.getNode(i);
+			
+			float hue = (float) i / (float) path.getNodeCount() * 0.33F;
+			int color = i == 0 ? 0 : Mth.hsvToRgb(hue, 0.9F, 0.9F);
+			int red = color >> 16 & 255;
+			int blue = color >> 8 & 255;
+			int green = color & 255;
+			RenderSystem.enableDepthTest();
+			RenderSystem.disableTexture();
+			RenderSystem.enableCull();
+			RenderSystem.setShaderColor(1, 1, 1, 1);
+			RenderSystem.setShader(GameRenderer::getPositionColorShader);
+			drawBox(stack, pos.add(-0.1, 0.6, -0.1), 0.2, 0.2, 0.2, new Color(red, green, blue));
+			
+			RenderSystem.disableCull();
+			drawText(i + "", stack, pos, 1.0);
+			drawText(point.type.name(), stack, pos, 1.25);
+			drawText(point.costMalus + "", stack, pos, 0.5);
+		}
+	}
+	
+	public void drawText(String text, PoseStack stack, Vec3 pos, double yOff) {
+		{
+			stack.pushPose();
+			stack.translate(pos.x, pos.y + yOff, pos.z);
+			int width = Minecraft.getInstance().font.width(text);
+			stack.scale(0.02f, 0.02F, 0.02F);
+			stack.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().camera.rotation());
+			stack.translate(width / 2f, 0, 0);
+			stack.scale(-1, -1, 1);
+			Minecraft.getInstance().font.draw(stack, text, 0, 0, new Color(255, 255, 255).getRGB());
+			stack.popPose();
 		}
 	}
 	

@@ -21,7 +21,6 @@ public class DebugPacketsMixin {
 	private static void preSendPathingPacket(Level level, Mob mob, Path path, float f, CallbackInfo ci) {
 		try {
 			level.players().forEach(player -> {
-				// apparently main == main and off == off..?
 				if (Registry.ITEM.getKey(player.getOffhandItem().getItem()).toString().equals("debugoverlays:ai_tool")) {
 					ServerPlayNetworking.send(
 							(ServerPlayer) player,

@@ -24,6 +24,7 @@ public class PacketHandler {
 					for (int i = 0; i < len; i++) path[i] = Node.createFromStream(buf);
 					Path path1 = new Path(Arrays.asList(path), new BlockPos(buf.readInt(), buf.readInt(), buf.readInt()), false);
 					Minecraft.getInstance().debugRenderer.pathfindingRenderer.addPath(buf.readInt(), path1, buf.readFloat());
+					path1.setNextNodeIndex(buf.readInt());
 				}
 				break;
 			}
@@ -52,6 +53,7 @@ public class PacketHandler {
 			buf.writeInt(path.getTarget().getZ());
 			buf.writeInt(entity.getId());
 			buf.writeFloat(distance);
+			buf.writeInt(path.getNextNodeIndex());
 		}
 		return buf;
 	}

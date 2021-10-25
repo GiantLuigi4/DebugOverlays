@@ -30,8 +30,7 @@ public class WorldRendererMixin {
 	@Inject(at = @At("TAIL"), method = "renderLevel")
 	public void postRender(PoseStack poseStack, float f, long l, boolean bl, Camera camera, GameRenderer gameRenderer, LightTexture lightTexture, Matrix4f matrix4f, CallbackInfo ci) {
 		if (minecraft.player == null) return;
-		// apparently main == off and off == main..?
-		if (Registry.ITEM.getKey(minecraft.player.getMainHandItem().getItem()).toString().equals("debugoverlays:ai_tool")) return;
+		if (!Registry.ITEM.getKey(minecraft.player.getOffhandItem().getItem()).toString().equals("debugoverlays:ai_tool")) return;
 
 //		Matrix4f srcMat = RenderSystem.getModelViewMatrix();
 //
