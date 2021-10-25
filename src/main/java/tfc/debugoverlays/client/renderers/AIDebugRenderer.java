@@ -77,10 +77,13 @@ public class AIDebugRenderer {
 		stack.translate(-playerX, -playerY, -playerZ);
 		
 		Map<Integer, Path> pathMap = Minecraft.getInstance().debugRenderer.pathfindingRenderer.pathMap;
-		pathMap.forEach((id, path) -> {
-			drawLine(stack, path, 0, 0, 0);
-			renderLoop(stack, id, path);
-		});
+		try {
+			pathMap.forEach((id, path) -> {
+				drawLine(stack, path, 0, 0, 0);
+				renderLoop(stack, id, path);
+			});
+		} catch (Throwable ignored) {
+		}
 	}
 	
 	void renderLoop(PoseStack stack, int id, Path path) {
